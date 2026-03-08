@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Arcnetic Phish-Catcher</title>
+  <style>
+    /* ── Reset & Base ─────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-base:      #0d0f14;
+      --bg-panel:     #141720;
+      --bg-card:      #1c2030;
+      --bg-input:     #0f1117;
+      --border:       #2a2f42;
+      --border-focus: #4a6cf7;
+      --text-primary: #e8eaf0;
+      --text-secondary:#8b92a8;
+      --text-muted:   #555c72;
+      --accent:       #4a6cf7;
+      --accent-glow:  rgba(74,108,247,.25);
+      --danger:       #e84545;
+      --danger-bg:    rgba(232,69,69,.12);
+      --success:      #34d399;
+      --pill-bg:      #1e2438;
+      --pill-border:  #2e3550;
+      --cta-from:     #e84545;
+      --cta-to:       #c42525;
+      --font:         'Segoe UI', system-ui, -apple-system, sans-serif;
+    }
+
+    body {
+      width: 360px;
+      min-height: 520px;
+      background: var(--bg-base);
+      color: var(--text-primary);
+      font-family: var(--font);
+      font-size: 13px;
+      line-height: 1.5;
+      overflow-x: hidden;
+    }
+
+    /* ── Header ────────────────────────────────────────────────── */
+    .header {
+      background: var(--bg-panel);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 16px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .header-left { display: flex; align-items: center; gap: 10px; }
+    .logo {
+      width: 34px; height: 34px;
+      background: linear-gradient(135deg, #e84545 0%, #4a6cf7 100%);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; flex-shrink: 0;
+      box-shadow: 0 2px 12px rgba(74,108,247,.35);
+    }
+   
+    .title-block h1 {
+      font-size: 14.5px;
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: .2px;
+    }
+    .title-block .subtitle {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 400;
+    }
+
+    /* Toggle switch */
+    .toggle-wrap { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+    .toggle-label { font-size: 11px; color: var(--text-muted); }
+    .toggle {
+      position: relative; width: 36px; height: 20px; flex-shrink: 0;
+    }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle-track {
+      position: absolute; inset: 0;
+      background: #2a2f42; border-radius: 20px;
+      cursor: pointer; transition: background .2s;
+    }
+    .toggle-track::after {
+      content: ''; position: absolute;
+      width: 14px; height: 14px;
+      left: 3px; top: 3px;
+      background: #fff; border-radius: 50%;
+      transition: transform .2s;
+      box-shadow: 0 1px 3px rgba(0,0,0,.4);
+    }
+    .toggle input:checked + .toggle-track { background: var(--accent); }
+    .toggle input:checked + .toggle-track::after { transform: translateX(16px); }
+
+    /* ── Status badge ─────────────────────────────────────────── */
+    .status-bar {
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
+      padding: 8px 16px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 11.5px;
+      color: var(--text-secondary);
+    }
+    .status-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 6px var(--success);
+      flex-shrink: 0;
+      animation: pulse 2.4s ease-in-out infinite;
+    }
+    .status-dot.off { background: var(--text-muted); box-shadow: none; animation: none; }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: .45; }
+    }
+
+    /* ── Body Content ─────────────────────────────────────────── */
+    .body { padding: 16px; display: flex; flex-direction: column; gap: 16px; }
+
+    /* ── Section ──────────────────────────────────────────────── */
+    .section-label {
+      font-size: 10.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .8px;
+      color: var(--text-muted);
+      margin-bottom: 7px;
+    }
+
+    /* ── Input Row ────────────────────────────────────────────── */
+    .input-row { display: flex; gap: 7px; }
+    .input-row input, .input-solo {
+      flex: 1;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text-primary);
+      font-family: var(--font);
+      font-size: 12.5px;
+      padding: 8px 10px;
+      outline: none;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .input-row input::placeholder, .input-solo::placeholder { color: var(--text-muted); }
+    .input-row input:focus, .input-solo:focus {
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+    .input-solo { width: 100%; }
+
+    /* ── Buttons ──────────────────────────────────────────────── */
+    .btn-add {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 8px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: opacity .15s, transform .1s;
+    }
+    .btn-add:hover { opacity: .88; }
+    .btn-add:active { transform: scale(.97); }
+
+    /* ── Name Tags ────────────────────────────────────────────── */
+    .names-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      min-height: 36px;
+    }
+    .name-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--pill-bg);
+      border: 1px solid var(--pill-border);
+      border-radius: 20px;
+      padding: 4px 11px 4px 10px;
+      font-size: 12px;
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+    .name-pill .remove-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-muted);
+      font-size: 14px;
+      line-height: 1;
+      padding: 0;
+      transition: color .15s;
+    }
+    .name-pill .remove-btn:hover { color: var(--danger); }
+    .empty-hint {
+      font-size: 11.5px;
+      color: var(--text-muted);
+      font-style: italic;
+      padding: 4px 0;
+    }
+
+    /* ── Divider ──────────────────────────────────────────────── */
+    .divider { border: none; border-top: 1px solid var(--border); margin: 0; }
+
+    /* ── Save indicator ───────────────────────────────────────── */
+    .save-indicator {
+      font-size: 11px;
+      color: var(--success);
+      text-align: center;
+      height: 16px;
+      opacity: 0;
+      transition: opacity .3s;
+    }
+    .save-indicator.show { opacity: 1; }
+
+    /* ── Privacy Block ────────────────────────────────────────── */
+    .privacy-block {
+      background: linear-gradient(135deg, rgba(52,211,153,.06), rgba(74,108,247,.06));
+      border: 1px solid rgba(52,211,153,.2);
+      border-radius: 8px;
+      padding: 10px 12px;
+      display: flex;
+      gap: 9px;
+      align-items: flex-start;
+    }
+    .privacy-icon { font-size: 15px; flex-shrink: 0; margin-top: 1px; }
+    .privacy-text { font-size: 11px; color: var(--text-secondary); line-height: 1.55; }
+    .privacy-text strong { color: var(--success); font-weight: 700; }
+
+    /* ── CTA Button ───────────────────────────────────────────── */
+    .cta-btn {
+      display: block;
+      width: 100%;
+      background: linear-gradient(135deg, var(--cta-from), var(--cta-to));
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-family: var(--font);
+      font-size: 12.5px;
+      font-weight: 700;
+      text-align: center;
+      cursor: pointer;
+      text-decoration: none;
+      letter-spacing: .25px;
+      box-shadow: 0 4px 18px rgba(232,69,69,.35);
+      transition: transform .15s, box-shadow .15s, opacity .15s;
+      line-height: 1.4;
+    }
+    .cta-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 24px rgba(232,69,69,.45);
+    }
+    .cta-btn:active { transform: translateY(0); opacity: .9; }
+    .cta-btn .cta-sub {
+      display: block;
+      font-size: 10.5px;
+      font-weight: 400;
+      opacity: .85;
+      margin-top: 2px;
+    }
+
+    /* ── Footer ───────────────────────────────────────────────── */
+    .footer {
+      text-align: center;
+      font-size: 10px;
+      color: var(--text-muted);
+      padding: 0 16px 14px;
+      line-height: 1.6;
+    }
+    .footer a { color: var(--text-muted); text-decoration: none; }
+    .footer a:hover { color: var(--text-secondary); }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <div class="logo">🎣</div>
+      <div class="title-block">
+        <h1>Phish-Catcher</h1>
+        <div class="subtitle">by Arcnetic · v1.0</div>
+      </div>
+    </div>
+    <div class="toggle-wrap">
+      <span class="toggle-label" id="enableLabel">ON</span>
+      <label class="toggle" title="Enable / disable protection">
+        <input type="checkbox" id="enableToggle" checked />
+        <span class="toggle-track"></span>
+      </label>
+    </div>
+  </div>
+
+  <!-- Status Bar -->
+  <div class="status-bar">
+    <span class="status-dot" id="statusDot"></span>
+    <span id="statusText">Protection active — monitoring Gmail &amp; Outlook</span>
+  </div>
+
+  <!-- Body -->
+  <div class="body">
+
+    <!-- Protected Names -->
+    <div>
+      <div class="section-label">Protected Executive Names</div>
+      <div class="input-row">
+        <input
+          type="text"
+          id="nameInput"
+          placeholder="e.g. Jane Doe"
+          maxlength="80"
+          autocomplete="off"
+        />
+        <button class="btn-add" id="addNameBtn">+ Add</button>
+      </div>
+      <div style="margin-top:9px;">
+        <div class="names-list" id="namesList">
+          <span class="empty-hint" id="emptyHint">No names added yet.</span>
+        </div>
+      </div>
+    </div>
+
+    <hr class="divider" />
+
+    <!-- Trusted Corporate Domain -->
+    <div>
+      <div class="section-label">Your Corporate Domain</div>
+      <input
+        type="text"
+        class="input-solo"
+        id="domainInput"
+        placeholder="e.g. acme.com"
+        maxlength="100"
+        autocomplete="off"
+      />
+      <div style="font-size:11px;color:var(--text-muted);margin-top:5px;">
+        Emails from this domain will <em>never</em> trigger warnings. Leave blank to flag all external senders.
+      </div>
+    </div>
+
+    <!-- Save Indicator -->
+    <div class="save-indicator" id="saveIndicator">✓ Settings saved locally</div>
+
+    <hr class="divider" />
+
+    <!-- Privacy Block -->
+    <div class="privacy-block">
+      <span class="privacy-icon">🔒</span>
+      <div class="privacy-text">
+        <strong>100% Local Processing.</strong> No email content, names, or settings
+        ever leave your browser. All data is stored in <code>chrome.storage.local</code>.
+        Open-source by <strong>Arcnetic</strong>.
+      </div>
+    </div>
+
+    <!-- CTA -->
+    <a
+      href="https://arcnetic.com"
+      target="_blank"
+      rel="noopener noreferrer"
+      class="cta-btn"
+      id="ctaBtn"
+    >
+      🛡️ Is your company truly secure?
+      <span class="cta-sub">Get a Free IT Security Audit by Arcnetic →</span>
+    </a>
+
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    Open-source · <a href="https://arcnetic.com" target="_blank" rel="noopener">arcnetic.com</a>
+    · No telemetry · No tracking
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
